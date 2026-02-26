@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+<meta name="viewport"
+content="width=device-width,
+initial-scale=1,
+maximum-scale=1,
+user-scalable=no,
+viewport-fit=cover">
+
+<style>
+html,body{
+ margin:0;
+ padding:0;
+ overflow:hidden;
+ background:black;
+ touch-action:none;
+}
+
+canvas{
+ display:block;
+}
+</style>
+
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#000000">
+
+<style>
+body{margin:0;overflow:hidden;}
+
+#ui{
+ position:absolute;
+ top:10px;
+ left:10px;
+ color:white;
+ font-size:20px;
+}
+
+#joystick{
+ position:absolute;
+ bottom:40px;
+ left:30px;
+ width:120px;
+ height:120px;
+ border-radius:50%;
+ background:rgba(255,255,255,0.2);
+ touch-action:none;
+}
+
+#stick{
+ position:absolute;
+ width:50px;
+ height:50px;
+ background:white;
+ border-radius:50%;
+ left:35px;
+ top:35px;
+}
+#powerBar{
+ position:absolute;
+ bottom:80px;
+ left:50%;
+ transform:translateX(-50%);
+ width:200px;
+ height:20px;
+ border:2px solid white;
+ display:none;
+}
+
+#powerFill{
+ height:100%;
+ width:0%;
+ background:lime;
+}
+
+#hotbar{
+ position:fixed;
+ bottom:20px;
+ left:50%;
+ transform:translateX(-50%);
+ display:flex;
+ gap:10px;
+ z-index:10;
+}
+
+.slot{
+ width:60px;
+ height:60px;
+ background:rgba(0,0,0,0.5);
+ border:3px solid white;
+ border-radius:12px;
+ display:flex;
+ align-items:center;
+ justify-content:center;
+ font-size:28px;
+ color:white;
+}
+
+.slot.active{
+ border-color:yellow;
+}
+
+/* ===== BITE ICON ===== */
+#biteIcon{
+ position:absolute;
+ top:35%;
+ left:50%;
+ transform:translate(-50%,-50%);
+ font-size:70px;
+ color:red;
+ font-weight:bold;
+ display:none;
+ animation:pop 0.4s infinite alternate;
+}
+
+@keyframes pop{
+ from{ transform:translate(-50%,-50%) scale(1); }
+ to{ transform:translate(-50%,-50%) scale(1.2); }
+}
+
+#coinUI{
+ position:fixed;
+
+ /* kiri bawah adaptive */
+ left:calc(env(safe-area-inset-left) + 12px);
+ bottom:calc(env(safe-area-inset-bottom) + 20px);
+
+ color:white;
+ font-size:clamp(16px, 2.5vw, 24px);
+ font-weight:bold;
+
+ background:rgba(0,0,0,0.5);
+ backdrop-filter:blur(6px);
+
+ padding:8px 14px;
+ border-radius:12px;
+
+ z-index:20;
+ user-select:none;
+}
+
+#fishNotify{
+ position:fixed;
+ top:80px;
+ left:50%;
+ transform:translateX(-50%);
+ background:rgba(0,0,0,0.8);
+ color:white;
+ padding:12px 20px;
+ border-radius:12px;
+ font-size:20px;
+ display:none;
+}
+
+#menuUI {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  
+  display: none;
+  flex-direction: column;
+  gap: 10px;
+
+  background: rgba(0,0,0,0.8);
+  padding: 20px;
+  border-radius: 10px;
+}
+
+#loadingScreen {
+  position: fixed;
+  top:0;
+  left:0;
+  width:100%;
+  height:100%;
+  background:#000;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  align-items:center;
+  z-index:9999;
+  color:white;
+  font-family:Arial, sans-serif;
+}
+
+#gameIcon {
+  width: 120px;
+  height: 120px;
+  margin-bottom: 20px;
+}
+
+#loadingBarContainer {
+  width:70%;
+  height:20px;
+  background:#333;
+  border-radius:10px;
+  overflow:hidden;
+  margin-bottom:10px;
+}
+
+#loadingBar {
+  width:0%;
+  height:100%;
+  background:#2ecc71;
+  border-radius:10px;
+}
+
+.rodShopUI{
+ position:absolute;
+ top:50%;
+ left:50%;
+ transform:translate(-50%,-50%);
+
+ width:min(92vw, 700px);
+ max-height:85vh;
+
+ background:rgba(0,0,0,0.9);
+ padding:clamp(10px,2vw,20px);
+ border-radius:14px;
+
+ display:none;
+ flex-direction:column;
+ gap:12px;
+
+ overflow-y:auto;
+ z-index:1200;
+ color:white;
+}
+
+.rodList{
+ display:flex;
+ gap:12px;
+ justify-content:center;
+ flex-wrap:wrap;
+}
+
+.rodCard{
+ position:relative;
+ width:clamp(120px, 28vw, 200px);
+ aspect-ratio:9/16;
+ overflow:hidden;
+ border-radius:14px;
+}
+
+.rodCard button{
+  margin-top:5px;
+  width:100%;
+}
+
+.rodImageFrame{
+  position:absolute;
+  inset:0;        /* top:0 left:0 right:0 bottom:0 */
+  z-index:1;
+  pointer-events:none;
+}
+
+.rodImage{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  opacity:0.35;   /* biar teks kebaca */
+  filter:blur(1px);
+}
+
+.rodInfo{
+  position:relative;
+  z-index:2;
+
+  height:100%;
+  padding:12px;
+
+  display:flex;
+  flex-direction:column;
+  justify-content:flex-end;
+
+  color:white;
+  text-shadow:0 2px 6px rgba(0,0,0,0.8);
+}
+
+.rodInfo h3{
+ font-size:clamp(14px,2.5vw,18px);
+ margin:0;
+}
+
+.rodInfo p{
+ font-size:clamp(11px,2vw,14px);
+ margin:4px 0;
+}
+
+@media (orientation:landscape){
+
+ .rodShopUI{
+   width:min(80vw,900px);
+   max-height:80vh;
+ }
+
+ .rodCard{
+   width:clamp(110px,18vw,180px);
+ }
+
+}
+
+#rodHotbar{
+  position:fixed;
+  bottom:90px;
+  left:50%;
+  transform:translateX(-50%);
+  display:flex;
+  gap:10px;
+  z-index:5;
+}
+
+.rodSlot{
+  width:70px;
+  height:70px;
+  background:#222;
+  border:2px solid #555;
+  border-radius:10px;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+}
+
+.rodSlot img{
+  width:100%;
+  height:100%;
+  object-fit:contain;
+}
+
+</style>
+</head>
+
+<body>
+
+<div id="loadingScreen">
+  <img id="gameIcon" src="icons/icon-512.png" alt="icon">
+  <div id="loadingBarContainer">
+    <div id="loadingBar"></div>
+  </div>
+  <p id="loadingText">Loading... 0%</p>
+</div>
+
+<div id="customUI" style="display:none; position:absolute; top:50px; right:20px; background:rgba(0,0,0,0.7); padding:15px; border-radius:10px; color:white;">
+  <h3>Customize Character</h3>
+  <label>Shirt Color:</label>
+  <input type="color" id="shirtColor" value="#2ecc71"><br><br>
+  <button id="saveCustom">Save</button>
+</div>
+
+<button id="openMenuBtn" style="
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  padding: 12px 18px;
+  background: #2980b9;
+  color: white;
+  border-radius: 10px;
+  z-index: 1000;
+">Menu</button>
+
+<div id="menuUI" class="menuUI">
+
+  <button id="resumeBtn">Resume</button>
+  <button id="settingsBtn">Settings</button>
+  <button id="saveBtn">Save</button>
+  <button id="quitBtn">Quit</button>
+
+</div>
+
+<div id="joystick">
+  <div id="stick"></div>
+</div>
+
+<div id="coinUI">💰 0</div>
+<div id="sellPrompt">Jual Ikan</div>
+
+<div id="hotbar">
+  <div class="slot active" id="slot1">🎣</div>
+</div>
+
+<div id="rodHotbar"></div>
+
+<button id="sellBtn" style="
+  position: absolute;
+  padding: 12px 20px;
+  background: #27ae60;
+  color: white;
+  border-radius: 10px;
+  display: none;
+  z-index: 999;
+">Sell Fish</button>
+
+<div id="fishNotify"></div>
+
+<div id="biteIcon" style="
+  position: absolute;
+  color: red;
+  font-size: 32px;
+  font-weight: bold;
+  display: none;
+  pointer-events: none;
+">!</div>
+
+<button id="openRodShopBtn" style="
+  position: absolute;
+  padding: 12px 20px;
+  background: #27ae60;
+  color: white;
+  border-radius: 10px;
+  display: none;
+  z-index: 999;
+">Open Rod Shop</button>
+
+<div id="rodShopUI" class="rodShopUI">
+
+  <h2>Rod Shop</h2>
+
+  <div class="rodList">
+
+    <div class="rodCard">
+
+  <div class="rodImageFrame">
+    <img class="rodImage" src="images/luckrod.png">
+  </div>
+
+  <div class="rodInfo">
+    <h3>Luck Rod</h3>
+    <p>Boost luck when fishing</p>
+    <button onclick="buyRod('LuckRod')">
+ Buy - 150
+</button>
+  </div>
+
+</div>
+
+    <div class="rodCard">
+      <div class="rodImageFrame">
+  <img class="rodImage" src="images/mediumrod.png">
+</div>
+      <h3>Medium Rod</h3>
+      <p>The best rod rn</p>
+      <button onclick="buyRod('Medium Rod')">
+        Buy - 500
+      </button>
+    </div>
+
+  </div>
+
+  <button onclick="closeRodShop()">Close</button>
+
+</div>
+
+<audio id="castSound" src="sounds/cast.mp3"></audio>
+<audio id="catchSound" src="sounds/catch.mp3"></audio>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/mrdoob/three.js@r128/examples/js/loaders/FontLoader.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/mrdoob/three.js@r128/examples/js/geometries/TextGeometry.js"></script>
+
+<script src="script.js" defer></script>
+
+</body>
+</html>
